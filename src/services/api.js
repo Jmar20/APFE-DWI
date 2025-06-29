@@ -1,0 +1,49 @@
+import axios from 'axios';
+import config from '../config';
+
+// Configuración base de axios
+const API_BASE_URL = config.API_BASE_URL;
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true, // Habilitar el envío automático de cookies
+});
+
+// Interceptor para agregar el token a las peticiones
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor para manejar respuestas y errores
+api.interceptors.response.use(
+  (response) => {
+    // Log para debugging de cookies en desarrollo
+    if (import.meta.env.DEV && document.cookie) {
+      console.log('Cookies después de la respuesta:', document.cookie);
+    }
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expirado o inválido
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;

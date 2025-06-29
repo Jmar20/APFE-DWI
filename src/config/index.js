@@ -1,6 +1,6 @@
 // Configuración del entorno
 export const config = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1',
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://pap-dwi-c7gjfrg4hdhfhug9.brazilsouth-01.azurewebsites.net/api/v1',
   APP_NAME: 'AgroPE',
   VERSION: '1.0.0',
   

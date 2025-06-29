@@ -76,8 +76,10 @@ export const authService = {
     cookieUtils.removeCookie('authToken');
     cookieUtils.removeCookie('JSESSIONID');
     
-    // Log para verificar que las cookies se eliminaron
-    console.log('Cookies después del logout:', cookieUtils.getAllCookies());
+    // Log para verificar que las cookies se eliminaron (solo en desarrollo)
+    if (import.meta.env.DEV) {
+      console.log('Cookies después del logout:', cookieUtils.getAllCookies());
+    }
   },
 
   // Obtener token del localStorage o cookies
@@ -108,7 +110,7 @@ export const authService = {
     return userData ? JSON.parse(userData) : null;
   },
 
-  // Método para debugging - obtener información de cookies
+  // Obtener información de cookies para autenticación
   getCookieInfo: () => {
     return {
       allCookies: cookieUtils.getAllCookies(),

@@ -34,7 +34,6 @@ Dependiendo de dónde vayas a desplegar tu frontend:
 ### 4. Variables de entorno importantes:
 - `VITE_API_BASE_URL`: URL base de tu API en Azure
 - `VITE_APP_ENV`: Entorno (development/production)
-- `VITE_ENABLE_COOKIE_DEBUG`: Solo para desarrollo
 
 ### 5. Verificación post-deployment:
 1. Verificar que las requests lleguen al backend en Azure

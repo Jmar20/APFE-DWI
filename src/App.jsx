@@ -8,7 +8,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
-import CookieDebugger from "./components/CookieDebugger";
 import HomePage from "./pages/HomePage";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -140,8 +139,6 @@ function App() {
             </Box>
             <Footer />
           </Box>
-          {/* Cookie Debugger - Solo en desarrollo */}
-          <CookieDebugger isDevelopment={import.meta.env.DEV} />
         </Router>
       </ThemeProvider>
     </AuthProvider>

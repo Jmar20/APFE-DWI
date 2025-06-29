@@ -29,10 +29,6 @@ api.interceptors.request.use(
 // Interceptor para manejar respuestas y errores
 api.interceptors.response.use(
   (response) => {
-    // Log para debugging de cookies en desarrollo
-    if (import.meta.env.DEV && document.cookie) {
-      console.log('Cookies después de la respuesta:', document.cookie);
-    }
     return response;
   },
   (error) => {

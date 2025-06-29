@@ -1,4 +1,4 @@
-// Utilidades para manejo de cookies
+// Utilidades para manejo de cookies (sin debugger)
 export const cookieUtils = {
   // Obtener el valor de una cookie por nombre
   getCookie: (name) => {
@@ -13,12 +13,12 @@ export const cookieUtils = {
   // Establecer una cookie
   setCookie: (name, value, options = {}) => {
     const {
-      expires = null,
-      maxAge = null,
+      expires,
+      maxAge,
       path = '/',
-      domain = null,
-      secure = false,
-      sameSite = 'Lax'
+      domain,
+      secure,
+      sameSite = 'lax'
     } = options;
 
     let cookieString = `${name}=${value}`;
@@ -49,37 +49,22 @@ export const cookieUtils = {
   // Eliminar una cookie
   removeCookie: (name, path = '/', domain = null) => {
     let cookieString = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=${path}`;
-    
     if (domain) {
       cookieString += `; domain=${domain}`;
     }
-    
     document.cookie = cookieString;
   },
 
-  // Verificar si una cookie existe
-  hasCookie: (name) => {
-    return cookieUtils.getCookie(name) !== null;
-  },
-
-  // Obtener todas las cookies como objeto
+  // Obtener todas las cookies
   getAllCookies: () => {
     const cookies = {};
-    if (document.cookie) {
-      document.cookie.split(';').forEach(cookie => {
-        const [name, value] = cookie.trim().split('=');
-        cookies[name] = value;
-      });
-    }
-    return cookies;
-  },
-
-  // Limpiar todas las cookies del dominio actual
-  clearAllCookies: () => {
-    const cookies = cookieUtils.getAllCookies();
-    Object.keys(cookies).forEach(name => {
-      cookieUtils.removeCookie(name);
+    document.cookie.split(';').forEach(cookie => {
+      const [name, value] = cookie.trim().split('=');
+      if (name && value) {
+        cookies[name] = decodeURIComponent(value);
+      }
     });
+    return cookies;
   }
 };
 

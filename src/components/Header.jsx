@@ -59,20 +59,13 @@ const Header = () => {
     handleUserMenuClose();
   };
 
-  // Enlaces de navegación
+  // Enlaces de navegación - siempre los mismos sin depender de autenticación
   const navLinks = [
     { label: "Inicio", path: "/" },
     { label: "Conócenos", path: "/about" },
     { label: "Contacto", path: "/contact" },
+    { label: "Dashboard", path: "/dashboard" },
   ];
-
-  // Enlaces adicionales para usuarios autenticados
-  const authNavLinks = isAuthenticated
-    ? [
-        { label: "Dashboard", path: "/dashboard" },
-        ...navLinks,
-      ]
-    : navLinks;
 
   return (
     <HideOnScroll>
@@ -118,7 +111,7 @@ const Header = () => {
                 alignItems: "center",
               }}
             >
-              {authNavLinks.map((link) => (
+              {navLinks.map((link) => (
                 <Button
                   key={link.path}
                   component={Link}
@@ -221,7 +214,7 @@ const Header = () => {
                 alignItems: "center",
               }}
             >
-              {authNavLinks.map((link) => (
+              {navLinks.map((link) => (
                 <Button
                   key={link.path}
                   component={Link}

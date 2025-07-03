@@ -4,7 +4,6 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { Box } from "@mui/material";
 import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
@@ -109,7 +108,12 @@ function App() {
     <AuthProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Router>
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <ScrollToTop />
           <Box
             sx={{
@@ -126,14 +130,7 @@ function App() {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route 
-                  path="/dashboard" 
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  } 
-                />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Box>

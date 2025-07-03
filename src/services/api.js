@@ -12,12 +12,14 @@ const api = axios.create({
   withCredentials: true, // Habilitar el envío automático de cookies
 });
 
-// Interceptor para agregar el token a las peticiones
+// Interceptor para agregar el token a las peticiones (opcional para compatibilidad)
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // El backend ahora usa cookies para autenticación, pero mantenemos esto por compatibilidad
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      // Agregar header personalizado si es necesario
+      config.headers['X-User-Data'] = userData;
     }
     return config;
   },
@@ -33,10 +35,9 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token expirado o inválido
-      localStorage.removeItem('authToken');
+      // Token expirado o inválido - solo limpiar localStorage sin redireccionar
       localStorage.removeItem('userData');
-      window.location.href = '/login';
+      console.log('Sesión expirada o inválida. Datos de autenticación limpiados.');
     }
     return Promise.reject(error);
   }

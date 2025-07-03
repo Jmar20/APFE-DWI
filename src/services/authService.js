@@ -1,5 +1,24 @@
 import api from './api';
-import cookieUtils from '../utils/cookieUtils';
+
+// Función auxiliar para manejar errores
+const handleError = (error) => {
+  if (error.response?.data) {
+    // Error del servidor con mensaje específico
+    if (typeof error.response.data === 'string') {
+      return new Error(error.response.data);
+    } else if (error.response.data.message) {
+      return new Error(error.response.data.message);
+    } else if (typeof error.response.data === 'object') {
+      // Errores de validación
+      const errorMessages = Object.values(error.response.data).join(', ');
+      return new Error(errorMessages);
+    }
+  } else if (error.message) {
+    return new Error(error.message);
+  } else {
+    return new Error('Error de conexión con el servidor');
+  }
+};
 
 // Servicio de autenticación
 export const authService = {
@@ -13,19 +32,37 @@ export const authService = {
         rol: 'AGRICULTOR' // Rol por defecto para registros desde la web
       });
       
-      if (response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
-        // Guardar datos del usuario (opcional)
-        localStorage.setItem('userData', JSON.stringify({
-          name: userData.name,
+      if (response.data.success) {
+        // El backend devuelve success: true en lugar del token directamente
+        // Obtener el token desde las cookies o hacer login automático
+        const loginResponse = await api.post('/auth/login', {
           email: userData.email,
-          rol: 'AGRICULTOR'
-        }));
+          password: userData.password
+        });
+        
+        if (loginResponse.data.success) {
+          // Guardar datos del usuario
+          localStorage.setItem('userData', JSON.stringify({
+            name: userData.name,
+            email: userData.email,
+            rol: 'AGRICULTOR'
+          }));
+          return { success: true, message: 'Registro exitoso' };
+        }
       }
       
       return response.data;
     } catch (error) {
-      throw this.handleError(error);
+      // Mensajes de error personalizados para registro
+      if (error.response?.status === 409) {
+        throw new Error('Ya existe una cuenta con este correo electrónico');
+      } else if (error.response?.status === 400) {
+        throw new Error('Datos de registro inválidos. Verifica que todos los campos sean correctos');
+      } else if (error.response?.status === 500) {
+        throw new Error('Error interno del servidor. Intenta nuevamente más tarde');
+      } else {
+        throw handleError(error);
+      }
     }
   },
 
@@ -37,71 +74,57 @@ export const authService = {
         password: credentials.password
       });
       
-      if (response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
-        // Podrías obtener más datos del usuario aquí si el backend los devuelve
+      if (response.data.success) {
+        // Guardar datos del usuario
         localStorage.setItem('userData', JSON.stringify({
-          email: credentials.email
+          name: response.data.name || credentials.email,
+          email: credentials.email,
+          rol: response.data.rol || 'AGRICULTOR'
         }));
-      }
-
-      // Verificar si se recibió una cookie de autenticación del backend
-      const authCookie = cookieUtils.getCookie('authToken') || cookieUtils.getCookie('JSESSIONID');
-      if (authCookie) {
-        console.log('Cookie de autenticación recibida:', authCookie);
+        return { success: true, message: 'Inicio de sesión exitoso' };
       }
       
       return response.data;
     } catch (error) {
-      throw this.handleError(error);
-    }
-  },
-
-  // Verificar token
-  verifyToken: async () => {
-    try {
-      const response = await api.post('/auth/verify');
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
+      // Mensajes de error personalizados para login
+      if (error.response?.status === 401) {
+        throw new Error('Credenciales incorrectas. Verifica tu correo y contraseña');
+      } else if (error.response?.status === 404) {
+        throw new Error('No existe una cuenta con este correo electrónico');
+      } else if (error.response?.status === 403) {
+        throw new Error('Tu cuenta está desactivada. Contacta al administrador');
+      } else if (error.response?.status === 500) {
+        throw new Error('Error interno del servidor. Intenta nuevamente más tarde');
+      } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+        throw new Error('Error de conexión. Verifica tu conexión a internet');
+      } else {
+        throw handleError(error);
+      }
     }
   },
 
   // Logout
   logout: () => {
-    localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
     
-    // Limpiar cookies de autenticación si existen
-    cookieUtils.removeCookie('authToken');
-    cookieUtils.removeCookie('JSESSIONID');
-    
-    // Log para verificar que las cookies se eliminaron (solo en desarrollo)
-    if (import.meta.env.DEV) {
-      console.log('Cookies después del logout:', cookieUtils.getAllCookies());
-    }
+    // Realizar logout en el backend para limpiar cookies
+    api.post('/auth/logout').catch(() => {
+      // Ignorar errores del logout del backend
+    });
   },
 
-  // Obtener token del localStorage o cookies
+  // Obtener token del localStorage (para compatibilidad)
   getToken: () => {
-    // Primero intentar obtener del localStorage
-    let token = localStorage.getItem('authToken');
-    
-    // Si no está en localStorage, intentar obtener de cookies
-    if (!token) {
-      token = cookieUtils.getCookie('authToken');
-    }
-    
-    return token;
+    // Como ahora usamos cookies para la autenticación, 
+    // verificamos si hay datos de usuario en localStorage
+    const userData = localStorage.getItem('userData');
+    return userData ? 'cookie-auth' : null;
   },
 
   // Verificar si el usuario está autenticado
   isAuthenticated: () => {
-    const token = localStorage.getItem('authToken');
-    const cookieToken = cookieUtils.getCookie('authToken');
-    const sessionCookie = cookieUtils.getCookie('JSESSIONID');
-    
-    return !!(token || cookieToken || sessionCookie);
+    const userData = localStorage.getItem('userData');
+    return !!userData;
   },
 
   // Obtener datos del usuario
@@ -109,36 +132,6 @@ export const authService = {
     const userData = localStorage.getItem('userData');
     return userData ? JSON.parse(userData) : null;
   },
-
-  // Obtener información de cookies para autenticación
-  getCookieInfo: () => {
-    return {
-      allCookies: cookieUtils.getAllCookies(),
-      authToken: cookieUtils.getCookie('authToken'),
-      sessionId: cookieUtils.getCookie('JSESSIONID'),
-      hasCookies: Object.keys(cookieUtils.getAllCookies()).length > 0
-    };
-  },
-
-  // Manejar errores de la API
-  handleError: (error) => {
-    if (error.response?.data) {
-      // Error del servidor con mensaje específico
-      if (typeof error.response.data === 'string') {
-        return new Error(error.response.data);
-      } else if (error.response.data.message) {
-        return new Error(error.response.data.message);
-      } else if (typeof error.response.data === 'object') {
-        // Errores de validación
-        const errorMessages = Object.values(error.response.data).join(', ');
-        return new Error(errorMessages);
-      }
-    } else if (error.message) {
-      return new Error(error.message);
-    } else {
-      return new Error('Error de conexión con el servidor');
-    }
-  }
 };
 
 export default authService;

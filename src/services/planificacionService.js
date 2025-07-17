@@ -1,41 +1,61 @@
 import api from './api';
 
-// Servicio para planificación
+// Servicio para planificación de actividades
 export const planificacionService = {
-  // Crear una planificación
-  crear: async (planificacionData) => {
+  // Obtener actividades de un cultivo
+  obtenerActividadesPorCultivo: async (cultivoId) => {
     try {
-      const response = await api.post('/planificaciones', planificacionData);
+      const response = await api.get(`/planificacion/actividades/cultivo/${cultivoId}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al crear planificación');
+      throw new Error(error.response?.data?.message || 'Error al obtener actividades');
     }
   },
 
-  // Obtener todas las planificaciones
-  obtenerTodas: async () => {
+  // Crear nueva actividad
+  crearActividad: async (actividadData) => {
     try {
-      const response = await api.get('/planificaciones');
+      const response = await api.post('/planificacion/actividades', actividadData);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener planificaciones');
+      throw new Error(error.response?.data?.message || 'Error al crear actividad');
     }
   },
 
-  // Obtener planificación por ID
-  obtenerPorId: async (planificacionId) => {
+  // Obtener actividad por ID
+  obtenerActividadPorId: async (actividadId) => {
     try {
-      const response = await api.get(`/planificaciones/${planificacionId}`);
+      const response = await api.get(`/planificacion/actividades/${actividadId}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener planificación');
+      throw new Error(error.response?.data?.message || 'Error al obtener actividad');
     }
   },
 
-  // Obtener planificaciones por cultivo
-  obtenerPorCultivo: async (cultivoId) => {
+  // Actualizar actividad
+  actualizarActividad: async (actividadId, actividadData) => {
     try {
-      const response = await api.get(`/planificaciones/cultivo/${cultivoId}`);
+      const response = await api.put(`/planificacion/actividades/${actividadId}`, actividadData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al actualizar actividad');
+    }
+  },
+
+  // Eliminar actividad
+  eliminarActividad: async (actividadId) => {
+    try {
+      const response = await api.delete(`/planificacion/actividades/${actividadId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error al eliminar actividad');
+    }
+  },
+
+  // Marcar actividad como completada
+  completarActividad: async (actividadId) => {
+    try {
+      const response = await api.put(`/planificacion/actividades/${actividadId}/completar`);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Error al obtener planificaciones del cultivo');

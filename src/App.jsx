@@ -7,13 +7,18 @@ import { AuthProvider } from "./context/AuthContext";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
+import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import EjemploCultivos from "./components/EjemploCultivos";
+import ApiDebugger from "./components/ApiDebugger";
+import TestAPIs from "./components/TestAPIs";
 
 // Tema personalizado con colores agrícolas
 const theme = createTheme({
@@ -130,7 +135,19 @@ function App() {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+                <Route path="/ejemplo-cultivos" element={<EjemploCultivos />} />
+                <Route path="/api-debugger" element={<ApiDebugger />} />
+                <Route path="/test-apis" element={<TestAPIs />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Box>

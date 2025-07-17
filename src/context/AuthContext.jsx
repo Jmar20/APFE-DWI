@@ -48,6 +48,8 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login(credentials);
       const userData = authService.getUserData();
       
+      console.log('🎯 Login completado - datos del usuario:', userData);
+      
       setIsAuthenticated(true);
       setUser(userData);
       
@@ -70,6 +72,14 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setUser(userDataStored);
       
+      // 🚀 NUEVO: Pequeño delay para permitir sincronización del backend
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // 🚀 NUEVO: Disparar evento global para que los componentes se actualicen
+      window.dispatchEvent(new CustomEvent('userRegistered', { 
+        detail: { userId: userDataStored?.userId } 
+      }));
+      
       return response;
     } catch (error) {
       setIsAuthenticated(false);
@@ -86,6 +96,21 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateUser = (updatedUserData) => {
+    console.log('🔄 Actualizando contexto de usuario:', updatedUserData);
+    
+    // Actualizar estado del contexto
+    setUser(updatedUserData);
+    
+    // Actualizar también el localStorage para persistencia
+    try {
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      console.log('✅ Datos de usuario actualizados en contexto y localStorage');
+    } catch (error) {
+      console.error('❌ Error al actualizar localStorage:', error);
+    }
+  };
+
   const value = {
     isAuthenticated,
     user,
@@ -93,6 +118,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
   };
 
   return (

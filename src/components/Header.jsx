@@ -12,25 +12,28 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import AgricultureIcon from "@mui/icons-material/Agriculture";
 import { Person, ExitToApp } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 
-// Componente para ocultar header al hacer scroll
-function HideOnScroll(props) {
-  const { children } = props;
-  const trigger = useScrollTrigger();
+// Componente para ocultar header al hacer scroll - Versión simplificada
+function HideOnScroll({ children }) {
+  const trigger = useScrollTrigger({
+    disableHysteresis: true,
+    threshold: 100,
+  });
 
   return (
     <Slide appear={false} direction="down" in={!trigger}>
-      {children}
+      <div>{children}</div>
     </Slide>
   );
 }
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState(null);
 
@@ -54,18 +57,39 @@ const Header = () => {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleProfileOpen = () => {
+    navigate('/profile');
     handleUserMenuClose();
   };
 
-  // Enlaces de navegación - siempre los mismos sin depender de autenticación
-  const navLinks = [
-    { label: "Inicio", path: "/" },
-    { label: "Conócenos", path: "/about" },
-    { label: "Contacto", path: "/contact" },
-    { label: "Dashboard", path: "/dashboard" },
-  ];
+  const handleProfileClose = () => {
+    // Ya no es necesario este método, pero lo mantenemos por compatibilidad
+  };
+
+  const handleLogout = () => {
+    logout();
+    handleUserMenuClose();
+    // Redirigir al login después de cerrar sesión
+    navigate('/login');
+  };
+
+  // Enlaces de navegación - Dashboard solo para usuarios autenticados
+  const getNavLinks = () => {
+    const baseLinks = [
+      { label: "Inicio", path: "/" },
+      { label: "Conócenos", path: "/about" },
+      { label: "Contacto", path: "/contact" },
+    ];
+    
+    // Solo agregar Dashboard si el usuario está autenticado
+    if (isAuthenticated) {
+      baseLinks.push({ label: "Dashboard", path: "/dashboard" });
+    }
+    
+    return baseLinks;
+  };
+
+  const navLinks = getNavLinks();
 
   return (
     <HideOnScroll>
@@ -140,7 +164,7 @@ const Header = () => {
                 // Usuario autenticado - mostrar perfil
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Typography variant="body2" sx={{ display: { xs: "none", sm: "block" } }}>
-                    ¡Hola, {user?.name || user?.email}!
+                    ¡Hola, {user?.nombre || user?.email}!
                   </Typography>
                   <Button
                     onClick={handleUserMenuOpen}
@@ -174,7 +198,7 @@ const Header = () => {
                       horizontal: "right",
                     }}
                   >
-                    <MenuItem onClick={handleUserMenuClose}>
+                    <MenuItem onClick={handleProfileOpen}>
                       <Person sx={{ mr: 1 }} />
                       Mi Perfil
                     </MenuItem>

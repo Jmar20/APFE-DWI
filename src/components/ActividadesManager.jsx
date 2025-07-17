@@ -33,23 +33,29 @@ import {
   RadioButtonUnchecked as UncheckedIcon,
   Schedule as ScheduleIcon,
   Agriculture as AgricultureIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { actividadService } from '../services';
 import { useAuth } from '../context/AuthContext';
+import ActividadesUrgentes from './ActividadesUrgentes';
+import ActividadesPorCultivo from './ActividadesPorCultivo';
+import { actividadesAutomaticasService } from '../services/actividadesAutomaticasService';
+import { cultivoService } from '../services';
 
 const ActividadesManager = ({ cultivoId = null }) => {
   const [actividades, setActividades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
+  const [cultivos, setCultivos] = useState([]);
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
-    fechaProgramada: '',
+    fechaEjecucion: '',
     prioridad: 'MEDIA',
-    cultivoId: cultivoId || 1,
+    cultivoId: cultivoId || null,
   });
 
   const prioridades = [
@@ -73,71 +79,142 @@ const ActividadesManager = ({ cultivoId = null }) => {
 
   useEffect(() => {
     cargarActividades();
-  }, [cultivoId]);
+    cargarCultivos();
+  }, [cultivoId, user?.id]); // Agregamos user?.id para recargar cuando cambie el usuario
+
+  // Agregar listener para eventos de actualización
+  useEffect(() => {
+    const handleCultivoUpdate = () => {
+      console.log('🔄 Evento de actualización de cultivo detectado, recargando datos...');
+      refrescarDatos();
+    };
+
+    const handleCultivoEliminado = (event) => {
+      console.log('🗑️ Cultivo eliminado detectado:', event.detail);
+      refrescarDatos();
+    };
+
+    // 🚀 NUEVO: Escuchar evento de usuario registrado
+    const handleUserRegistered = (event) => {
+      console.log('🔄 Usuario recién registrado detectado en ActividadesManager, recargando datos...', event.detail);
+      // Recargar datos después de un pequeño delay adicional
+      setTimeout(() => {
+        refrescarDatos();
+      }, 2000);
+    };
+
+    // Escuchar eventos personalizados
+    window.addEventListener('cultivoCreated', handleCultivoUpdate);
+    window.addEventListener('cultivoUpdated', handleCultivoUpdate);
+    window.addEventListener('cultivoEliminado', handleCultivoEliminado);
+    window.addEventListener('userRegistered', handleUserRegistered);
+
+    return () => {
+      window.removeEventListener('cultivoCreated', handleCultivoUpdate);
+      window.removeEventListener('cultivoUpdated', handleCultivoUpdate);
+      window.removeEventListener('cultivoEliminado', handleCultivoEliminado);
+      window.removeEventListener('userRegistered', handleUserRegistered);
+    };
+  }, []);
+
+  // Polling cada 30 segundos para asegurar sincronización
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!document.hidden) { // Solo refrescar si la página está visible
+        refrescarDatos();
+      }
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const cargarCultivos = async () => {
+    try {
+      if (user?.userId && !cultivoId) {
+        console.log('🌱 Cargando cultivos para usuario:', user.userId);
+        const data = await cultivoService.obtenerPorUsuario(user.userId);
+        console.log('🌱 Cultivos obtenidos:', data);
+        setCultivos(data);
+      }
+    } catch (err) {
+      console.error('❌ Error al cargar cultivos:', err);
+    }
+  };
+
+  const refrescarDatos = async () => {
+    await Promise.all([
+      cargarActividades(),
+      cargarCultivos()
+    ]);
+  };
 
   const cargarActividades = async () => {
     try {
       setLoading(true);
       setError('');
       
+      console.log('🔍 ActividadesManager - cargarActividades iniciado');
+      console.log('🔍 cultivoId:', cultivoId);
+      console.log('🔍 user?.userId:', user?.userId);
+      
       if (cultivoId) {
+        // Cargar actividades específicas del cultivo
+        console.log('🔍 Cargando actividades para cultivo específico:', cultivoId);
         const data = await actividadService.obtenerPorCultivo(cultivoId);
+        console.log('🔍 Actividades del cultivo obtenidas:', data);
         setActividades(data);
       } else {
-        // Datos de ejemplo para mostrar en el dashboard general
-        setActividades([
-          {
-            id: 1,
-            nombre: 'Riego matutino',
-            descripcion: 'Regar las plantas temprano en la mañana',
-            fechaProgramada: '2024-07-04',
-            prioridad: 'ALTA',
-            realizada: false,
-            cultivoId: 1,
-            cultivoNombre: 'Tomates Cherry',
-          },
-          {
-            id: 2,
-            nombre: 'Aplicar fertilizante',
-            descripcion: 'Aplicar fertilizante orgánico a las lechugas',
-            fechaProgramada: '2024-07-05',
-            prioridad: 'MEDIA',
-            realizada: false,
-            cultivoId: 2,
-            cultivoNombre: 'Lechuga',
-          },
-          {
-            id: 3,
-            nombre: 'Poda de hojas secas',
-            descripcion: 'Remover hojas secas y dañadas',
-            fechaProgramada: '2024-07-03',
-            prioridad: 'BAJA',
-            realizada: true,
-            cultivoId: 1,
-            cultivoNombre: 'Tomates Cherry',
-          },
-        ]);
+        // Cargar todas las actividades del usuario autenticado
+        if (user?.userId) {
+          console.log('🔍 Cargando actividades para usuario:', user.userId);
+          const data = await actividadService.obtenerPorUsuario(user.userId);
+          console.log('🔍 Actividades del usuario obtenidas:', data);
+          console.log('🔍 Cantidad de actividades:', data?.length || 0);
+          setActividades(data);
+        } else {
+          console.log('🔍 No hay usuario autenticado, estableciendo array vacío');
+          setActividades([]);
+        }
       }
     } catch (err) {
+      console.error('❌ Error al cargar actividades:', err);
       setError(err.message || 'Error al cargar actividades');
+      setActividades([]); // Array vacío en caso de error
     } finally {
       setLoading(false);
+      console.log('🔍 cargarActividades completado, loading establecido a false');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await actividadService.registrar(formData);
+      const actividadData = {
+        ...formData,
+        userId: user?.userId,
+        cultivoId: cultivoId || formData.cultivoId
+      };
+
+      if (cultivoId) {
+        // Crear actividad para cultivo específico
+        await actividadService.crearParaCultivo(cultivoId, actividadData);
+      } else {
+        // Crear actividad general
+        await actividadService.registrar(actividadData);
+      }
+
       setOpenDialog(false);
       setFormData({
         nombre: '',
         descripcion: '',
-        fechaProgramada: '',
+        fechaEjecucion: '',
         prioridad: 'MEDIA',
-        cultivoId: cultivoId || 1,
+        cultivoId: cultivoId || null,
       });
-      cargarActividades();
+      refrescarDatos(); // Usar refrescarDatos en lugar de solo cargarActividades
+      
+      // 🚨 Disparar evento para actualizar alertas en Dashboard
+      window.dispatchEvent(new CustomEvent('actividadCreated'));
     } catch (err) {
       setError(err.message || 'Error al guardar actividad');
     }
@@ -146,11 +223,49 @@ const ActividadesManager = ({ cultivoId = null }) => {
   const handleToggleRealizada = async (actividadId, realizada) => {
     try {
       if (!realizada) {
-        await actividadService.marcarComoRealizada(actividadId);
+        await actividadService.marcarRealizada(actividadId);
+        refrescarDatos(); // Usar refrescarDatos
+        
+        // 🚨 Disparar evento para actualizar alertas en Dashboard
+        window.dispatchEvent(new CustomEvent('actividadUpdated'));
       }
-      cargarActividades();
     } catch (err) {
       setError(err.message || 'Error al actualizar actividad');
+    }
+  };
+
+  const handleGenerarActividadesAutomaticas = async () => {
+    try {
+      if (!user?.userId) {
+        setError('Usuario no autenticado');
+        return;
+      }
+
+      // Obtener cultivos del usuario
+      const cultivos = await cultivoService.obtenerPorUsuario(user.userId);
+      
+      if (cultivos.length === 0) {
+        setError('No tienes cultivos registrados. Crea un cultivo primero.');
+        return;
+      }
+
+      // Generar actividades para cada cultivo
+      for (const cultivo of cultivos) {
+        try {
+          await actividadesAutomaticasService.generarActividadesParaCultivo({
+            ...cultivo,
+            userId: user.id
+          });
+        } catch (error) {
+          console.error(`Error al generar actividades para cultivo ${cultivo.tipo}:`, error);
+        }
+      }
+
+      // Recargar actividades
+      refrescarDatos(); // Usar refrescarDatos para recargar todo
+      setError(''); // Limpiar errores previos
+    } catch (err) {
+      setError(err.message || 'Error al generar actividades automáticas');
     }
   };
 
@@ -176,13 +291,32 @@ const ActividadesManager = ({ cultivoId = null }) => {
         <Typography variant="h5" component="h2">
           {cultivoId ? 'Actividades del Cultivo' : 'Mis Actividades'}
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenDialog(true)}
-        >
-          Nueva Actividad
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={refrescarDatos}
+            startIcon={<RefreshIcon />}
+            sx={{ 
+              borderColor: '#666',
+              color: '#666',
+              minWidth: 'auto',
+              '&:hover': {
+                borderColor: '#333',
+                backgroundColor: 'rgba(0,0,0,0.04)'
+              }
+            }}
+          >
+            Refrescar
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenDialog(true)}
+          >
+            Nueva Actividad
+          </Button>
+        </Box>
       </Box>
 
       {error && (
@@ -191,74 +325,26 @@ const ActividadesManager = ({ cultivoId = null }) => {
         </Alert>
       )}
 
+      {/* 🚨 NUEVA FUNCIONALIDAD: ACTIVIDADES URGENTES */}
+      <ActividadesUrgentes 
+        actividades={actividades}
+        onToggleCompleted={handleToggleRealizada}
+      />
+
       <Grid container spacing={3}>
-        {/* Actividades Pendientes */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" mb={2}>
-                <ScheduleIcon color="warning" sx={{ mr: 1 }} />
-                <Typography variant="h6">
-                  Pendientes ({actividadesPendientes.length})
-                </Typography>
-              </Box>
-              
-              <List>
-                {actividadesPendientes.map((actividad) => (
-                  <ListItem key={actividad.id} divider>
-                    <ListItemIcon>
-                      <Checkbox
-                        icon={<UncheckedIcon />}
-                        checkedIcon={<CheckCircleIcon />}
-                        checked={false}
-                        onChange={() => handleToggleRealizada(actividad.id, actividad.realizada)}
-                      />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={actividad.nombre}
-                      secondary={
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">
-                            {actividad.descripcion}
-                          </Typography>
-                          <Box display="flex" alignItems="center" gap={1} mt={1}>
-                            <Typography variant="caption">
-                              {new Date(actividad.fechaProgramada).toLocaleDateString()}
-                            </Typography>
-                            <Chip
-                              label={actividad.prioridad}
-                              size="small"
-                              color={getPrioridadColor(actividad.prioridad)}
-                            />
-                            {!cultivoId && (
-                              <Chip
-                                label={actividad.cultivoNombre}
-                                size="small"
-                                variant="outlined"
-                                icon={<AgricultureIcon />}
-                              />
-                            )}
-                          </Box>
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                ))}
-                {actividadesPendientes.length === 0 && (
-                  <ListItem>
-                    <ListItemText
-                      primary="No hay actividades pendientes"
-                      secondary="¡Excelente trabajo!"
-                    />
-                  </ListItem>
-                )}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* Actividades por Cultivo */}
+        {!cultivoId && (
+          <Grid item xs={12} md={6}>
+            <ActividadesPorCultivo 
+              actividades={actividades}
+              onToggleCompleted={handleToggleRealizada}
+              cultivos={cultivos}
+            />
+          </Grid>
+        )}
 
         {/* Actividades Realizadas */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={cultivoId ? 12 : 6}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" mb={2}>
@@ -290,7 +376,7 @@ const ActividadesManager = ({ cultivoId = null }) => {
                           </Typography>
                           <Box display="flex" alignItems="center" gap={1} mt={1}>
                             <Typography variant="caption">
-                              {new Date(actividad.fechaProgramada).toLocaleDateString()}
+                              {new Date(actividad.fechaEjecucion).toLocaleDateString()}
                             </Typography>
                             {!cultivoId && (
                               <Chip
@@ -351,13 +437,31 @@ const ActividadesManager = ({ cultivoId = null }) => {
               rows={3}
               required
             />
+
+            {!cultivoId && (
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Cultivo</InputLabel>
+                <Select
+                  value={formData.cultivoId || ''}
+                  onChange={(e) => setFormData({...formData, cultivoId: e.target.value})}
+                  label="Cultivo"
+                  required
+                >
+                  {cultivos.map((cultivo) => (
+                    <MenuItem key={cultivo.id} value={cultivo.id}>
+                      {cultivo.tipo} {cultivo.variedad && `(${cultivo.variedad})`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
             
             <TextField
               fullWidth
               label="Fecha programada"
               type="date"
-              value={formData.fechaProgramada}
-              onChange={(e) => setFormData({...formData, fechaProgramada: e.target.value})}
+              value={formData.fechaEjecucion}
+              onChange={(e) => setFormData({...formData, fechaEjecucion: e.target.value})}
               margin="normal"
               InputLabelProps={{ shrink: true }}
               required

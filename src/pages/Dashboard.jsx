@@ -331,43 +331,6 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-
-            <Grid item xs={12} sm={6} md={3}>
-              <Card
-                sx={{
-                  background: `linear-gradient(135deg, ${theme.palette.success.main}, ${theme.palette.success.dark})`,
-                  color: "white",
-                }}
-              >
-                <CardContent>
-                  <Box display="flex" alignItems="center" justifyContent="space-between">
-                    <Box>
-                      <Typography variant="h4" fontWeight="bold">
-                        {estadisticas.productividadSemanal}%
-                      </Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                        Productividad
-                      </Typography>
-                    </Box>
-                    <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
-                      <TrendingUpIcon />
-                    </Avatar>
-                  </Box>
-                  <Box mt={2}>
-                    <LinearProgress
-                      variant="determinate"
-                      value={estadisticas.productividadSemanal}
-                      sx={{
-                        bgcolor: "rgba(255,255,255,0.2)",
-                        "& .MuiLinearProgress-bar": {
-                          bgcolor: "rgba(255,255,255,0.8)",
-                        },
-                      }}
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
           </Grid>
         </Box>
 

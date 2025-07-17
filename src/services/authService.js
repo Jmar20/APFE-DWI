@@ -41,9 +41,10 @@ export const authService = {
         });
         
         if (loginResponse.data.success) {
-          // Guardar datos del usuario
+          // Guardar datos del usuario con consistencia en nombre
           localStorage.setItem('userData', JSON.stringify({
             name: userData.name,
+            nombre: userData.name, // ← Agregar también como 'nombre' para consistencia
             email: userData.email,
             rol: 'AGRICULTOR'
           }));
@@ -78,8 +79,10 @@ export const authService = {
       
       if (response.data.success) {
         // Crear objeto con todos los datos disponibles - ACTUALIZADO para backend v2
+        const userName = response.data.userName || response.data.name || response.data.nombre || credentials.email;
         const userData = {
-          name: response.data.userName || response.data.name || response.data.nombre || credentials.email, // ← NUEVO: usar userName del backend
+          name: userName, // ← NUEVO: usar userName del backend
+          nombre: userName, // ← Agregar también como 'nombre' para consistencia
           email: response.data.userEmail || credentials.email, // ← ACTUALIZADO: usar userEmail del backend
           rol: response.data.userRole || response.data.rol || 'AGRICULTOR', // ← ACTUALIZADO: usar userRole del backend
           userId: response.data.userId || response.data.id || response.data.user?.id || response.data.usuario?.id,
@@ -239,6 +242,7 @@ export const authService = {
         const currentUserData = JSON.parse(localStorage.getItem('userData') || '{}');
         const updatedUserData = {
           ...currentUserData,
+          name: userData.nombre, // ← Actualizar también como 'name'
           nombre: userData.nombre,
           email: userData.email
         };

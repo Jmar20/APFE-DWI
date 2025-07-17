@@ -36,6 +36,21 @@ const Header = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+
+  // Escuchar eventos de actualización de perfil para forzar re-render
+  React.useEffect(() => {
+    const handleProfileUpdate = () => {
+      console.log('🔄 Header detectó actualización de perfil, forzando re-render...');
+      forceUpdate();
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, []);
 
   // Función para manejar navegación inteligente
   const handleNavigation = (path) => {
@@ -164,7 +179,7 @@ const Header = () => {
                 // Usuario autenticado - mostrar perfil
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Typography variant="body2" sx={{ display: { xs: "none", sm: "block" } }}>
-                    ¡Hola, {user?.nombre || user?.email}!
+                    ¡Hola, {user?.name || user?.nombre || 'Usuario'}!
                   </Typography>
                   <Button
                     onClick={handleUserMenuOpen}

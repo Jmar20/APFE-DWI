@@ -26,9 +26,11 @@ import {
   Nature as NatureIcon,
   LocalFlorist as FloristIcon,
   Warning as WarningIcon,
+  Schedule as ScheduleIcon,
+  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
-import { authService } from '../services';
+import { authService, cultivoService, actividadService, alertaService } from '../services';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import { validatePassword } from '../utils/validation';
 
@@ -38,9 +40,17 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Estados para las estadísticas dinámicas
+  const [estadisticas, setEstadisticas] = useState({
+    cultivosActivos: 0,
+    actividadesPendientes: 0,
+    alertasNoLeidas: 0,
+  });
+  const [loadingEstadisticas, setLoadingEstadisticas] = useState(true);
+
   // Estados para formularios
   const [profileData, setProfileData] = useState({
-    nombre: user?.nombre || '',
+    nombre: user?.nombre || user?.name || '',
     email: user?.email || '',
   });
 
@@ -54,11 +64,84 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       setProfileData({
-        nombre: user.nombre || '',
+        nombre: user.nombre || user.name || '',
         email: user.email || '',
       });
     }
   }, [user]);
+
+  // Función para cargar estadísticas dinámicas
+  const cargarEstadisticas = async () => {
+    if (!user?.userId) return;
+
+    try {
+      setLoadingEstadisticas(true);
+      
+      // Cargar cultivos activos
+      const cultivos = await cultivoService.obtenerPorUsuario(user.userId);
+      
+      // Cargar actividades pendientes
+      const actividades = await actividadService.obtenerPorUsuario(user.userId);
+      const actividadesPendientes = actividades.filter(act => !act.realizada);
+      
+      // Cargar alertas automáticas
+      const alertas = await alertaService.obtenerAutomaticasPorUsuario(user.userId);
+      
+      console.log('📊 Estadísticas cargadas en Profile:', {
+        cultivos: cultivos.length,
+        actividadesPendientes: actividadesPendientes.length,
+        alertas: alertas?.length || 0
+      });
+      
+      setEstadisticas({
+        cultivosActivos: cultivos.length,
+        actividadesPendientes: actividadesPendientes.length,
+        alertasNoLeidas: alertas?.length || 0,
+      });
+      
+    } catch (error) {
+      console.error('❌ Error al cargar estadísticas en Profile:', error);
+      // En caso de error, mantener los valores en 0
+      setEstadisticas({
+        cultivosActivos: 0,
+        actividadesPendientes: 0,
+        alertasNoLeidas: 0,
+      });
+    } finally {
+      setLoadingEstadisticas(false);
+    }
+  };
+
+  // useEffect para cargar estadísticas cuando el usuario esté disponible
+  useEffect(() => {
+    if (user?.userId) {
+      cargarEstadisticas();
+    }
+  }, [user?.userId]);
+
+  // Listener para actualizar datos cuando se crean nuevos cultivos o actividades
+  useEffect(() => {
+    const handleDataUpdated = () => {
+      console.log('🔄 Actualizando estadísticas en Profile...');
+      cargarEstadisticas();
+    };
+
+    // Agregar listeners para eventos del dashboard
+    window.addEventListener('cultivoCreated', handleDataUpdated);
+    window.addEventListener('cultivoUpdated', handleDataUpdated);
+    window.addEventListener('cultivoEliminado', handleDataUpdated);
+    window.addEventListener('actividadCreated', handleDataUpdated);
+    window.addEventListener('actividadUpdated', handleDataUpdated);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('cultivoCreated', handleDataUpdated);
+      window.removeEventListener('cultivoUpdated', handleDataUpdated);
+      window.removeEventListener('cultivoEliminado', handleDataUpdated);
+      window.removeEventListener('actividadCreated', handleDataUpdated);
+      window.removeEventListener('actividadUpdated', handleDataUpdated);
+    };
+  }, [user?.userId]);
 
   // Limpiar mensajes cuando cambie el formulario
   const clearMessages = () => {
@@ -98,6 +181,11 @@ const Profile = () => {
       }
 
       console.log('💾 Actualizando perfil para userId:', user.userId);
+      console.log('📊 Datos actuales del usuario en contexto:', user);
+      console.log('📝 Datos del formulario a enviar:', {
+        nombre: profileData.nombre.trim(),
+        email: profileData.email.trim()
+      });
 
       // Llamar al servicio para actualizar perfil
       const updatedData = await authService.updateUserInfo(user.userId, {
@@ -105,15 +193,24 @@ const Profile = () => {
         email: profileData.email.trim()
       });
 
-      // Crear objeto con datos actualizados
+      console.log('✅ Respuesta del servicio de actualización:', updatedData);
+
+      // Crear objeto con datos actualizados - incluir ambas propiedades para consistencia
       const newUserData = {
         ...user,
+        name: profileData.nombre.trim(), // ← Actualizar también como 'name'
         nombre: profileData.nombre.trim(),
         email: profileData.email.trim()
       };
 
       // Actualizar el contexto de usuario inmediatamente
       updateUser(newUserData);
+      console.log('🔄 Datos actualizados en el contexto:', newUserData);
+
+      // Disparar evento personalizado para notificar que el perfil se actualizó
+      window.dispatchEvent(new CustomEvent('profileUpdated', { 
+        detail: { user: newUserData } 
+      }));
 
       // También actualizar el estado local del formulario para reflejar los cambios
       setProfileData({
@@ -278,7 +375,11 @@ const Profile = () => {
             <CardContent sx={{ textAlign: 'center' }}>
               <AgricultureIcon sx={{ fontSize: 40, mb: 1 }} />
               <Typography variant="h4" fontWeight="bold">
-                0
+                {loadingEstadisticas ? (
+                  <CircularProgress size={24} sx={{ color: 'white' }} />
+                ) : (
+                  estadisticas.cultivosActivos
+                )}
               </Typography>
               <Typography variant="body1">
                 Cultivos Activos
@@ -293,9 +394,13 @@ const Profile = () => {
             height: '100%'
           }}>
             <CardContent sx={{ textAlign: 'center' }}>
-              <NatureIcon sx={{ fontSize: 40, mb: 1 }} />
+              <ScheduleIcon sx={{ fontSize: 40, mb: 1 }} />
               <Typography variant="h4" fontWeight="bold">
-                0
+                {loadingEstadisticas ? (
+                  <CircularProgress size={24} sx={{ color: 'white' }} />
+                ) : (
+                  estadisticas.actividadesPendientes
+                )}
               </Typography>
               <Typography variant="body1">
                 Actividades Pendientes
@@ -305,17 +410,21 @@ const Profile = () => {
         </Grid>
         <Grid item xs={12} md={4}>
           <Card sx={{ 
-            background: 'linear-gradient(135deg, #9C27B0 0%, #BA68C8 100%)',
+            background: 'linear-gradient(135deg, #f44336 0%, #e57373 100%)',
             color: 'white',
             height: '100%'
           }}>
             <CardContent sx={{ textAlign: 'center' }}>
-              <FloristIcon sx={{ fontSize: 40, mb: 1 }} />
+              <NotificationsIcon sx={{ fontSize: 40, mb: 1 }} />
               <Typography variant="h4" fontWeight="bold">
-                0
+                {loadingEstadisticas ? (
+                  <CircularProgress size={24} sx={{ color: 'white' }} />
+                ) : (
+                  estadisticas.alertasNoLeidas
+                )}
               </Typography>
               <Typography variant="body1">
-                Cosechas Realizadas
+                Alertas Nuevas
               </Typography>
             </CardContent>
           </Card>
@@ -342,7 +451,7 @@ const Profile = () => {
               <Box display="flex" alignItems="center" mb={1}>
                 <BadgeIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                 <Typography variant="body2">
-                  <strong>Nombre:</strong> {user?.nombre || 'No especificado'}
+                  <strong>Nombre:</strong> {user?.nombre || user?.name || 'No especificado'}
                 </Typography>
               </Box>
               <Box display="flex" alignItems="center">

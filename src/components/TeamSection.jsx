@@ -19,7 +19,7 @@ const TeamSection = () => {
   const teamData = [
     {
       name: "Marcos Gamero",
-      role: "CEO & Fundadora",
+      role: "CEO & Fundador",
       image:
         "https://media.licdn.com/dms/image/v2/D5603AQEjuRgUNTj_4Q/profile-displayphoto-shrink_400_400/B56ZYBnRr1GsAg-/0/1743783795924?e=1756944000&v=beta&t=oubMY2iVRbxR0Ew0MRWGn3faumvmpT5NEoH4gQ_PQSo",
       linkedin: "#",
@@ -49,14 +49,7 @@ const TeamSection = () => {
       linkedin: "#",
       github: "#",
     },
-    {
-      name: "Yael Ramos",
-      role: "UX/UI Designer",
-      image:
-        "https://i.ibb.co/W4ckfPBv/Imagen-de-Whats-App-2025-06-28-a-las-20-59-28-fab64393.jpg",
-      linkedin: "#",
-      github: "#",
-    },
+
   ];
 
   return (

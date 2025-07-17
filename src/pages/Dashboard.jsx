@@ -406,11 +406,6 @@ const Dashboard = () => {
               label="Planificación"
               iconPosition="start"
             />
-            <Tab
-              icon={<SettingsIcon />}
-              label="Backend Status"
-              iconPosition="start"
-            />
           </Tabs>
         </Paper>
 

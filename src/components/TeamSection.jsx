@@ -49,7 +49,14 @@ const TeamSection = () => {
       linkedin: "#",
       github: "#",
     },
-
+    {
+      name: "Yael Ramos",
+      role: "UX/UI Designer",
+      image:
+        "https://i.ibb.co/W4ckfPBv/Imagen-de-Whats-App-2025-06-28-a-las-20-59-28-fab64393.jpg",
+      linkedin: "#",
+      github: "#",
+    },
   ];
 
   return (

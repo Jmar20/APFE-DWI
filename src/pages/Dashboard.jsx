@@ -401,11 +401,6 @@ const Dashboard = () => {
               label="Alertas"
               iconPosition="start"
             />
-            <Tab
-              icon={<CalendarIcon />}
-              label="Planificación"
-              iconPosition="start"
-            />
           </Tabs>
         </Paper>
 

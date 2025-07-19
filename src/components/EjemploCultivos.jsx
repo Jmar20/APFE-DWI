@@ -9,6 +9,7 @@ import {
   CircularProgress 
 } from '@mui/material';
 import { cultivoService } from '../services';
+import { config } from '../config';
 
 const EjemploCultivos = () => {
   const [cultivos, setCultivos] = useState([]);
@@ -75,7 +76,7 @@ const EjemploCultivos = () => {
       </Typography>
       
       <Typography variant="body1" paragraph>
-        Este es un ejemplo de cómo conectar el frontend React con tu backend en localhost:8080
+        Este es un ejemplo de cómo conectar el frontend React con tu backend usando {config.API_BASE_URL}
       </Typography>
 
       {/* Mensajes de estado */}
@@ -119,7 +120,7 @@ const EjemploCultivos = () => {
             Configuración Actual
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            <strong>Backend URL:</strong> http://localhost:8080/api/v1
+            <strong>Backend URL:</strong> {config.API_BASE_URL}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             <strong>Endpoint de cultivos:</strong> GET /gestioncultivo/cultivos/usuario/{'{id}'}
@@ -166,7 +167,7 @@ const EjemploCultivos = () => {
             • Abre las herramientas de desarrollador (F12) para ver los logs de consola
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            • Verifica que tu backend esté corriendo en http://localhost:8080
+            • Verifica que tu backend esté corriendo en {config.API_BASE_URL}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             • Revisa la pestaña Network para ver las peticiones HTTP

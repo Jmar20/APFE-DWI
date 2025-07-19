@@ -28,6 +28,7 @@ import {
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { parcelaService } from '../services/parcelaService';
+import { config } from '../config';
 import { useAuth } from '../context/AuthContext';
 
 const ParcelasManager = () => {
@@ -179,7 +180,7 @@ const ParcelasManager = () => {
         console.log(`🌤️ Consultando clima para coordenadas ${coordKey} (${coordData.parcelas.length} parcelas)...`);
         
         const response = await fetch(
-          `http://localhost:8080/api/v1/alertas/openweather/clima?latitud=${coordData.latitud}&longitud=${coordData.longitud}`
+          `${config.API_BASE_URL}/alertas/openweather/clima?latitud=${coordData.latitud}&longitud=${coordData.longitud}`
         );
         
         if (response.ok) {
@@ -297,7 +298,7 @@ const ParcelasManager = () => {
         setTimeout(async () => {
           try {
             const response = await fetch(
-              `http://localhost:8080/api/v1/alertas/openweather/clima?latitud=${parcelaParaClima.latitud}&longitud=${parcelaParaClima.longitud}`
+              `${config.API_BASE_URL}/alertas/openweather/clima?latitud=${parcelaParaClima.latitud}&longitud=${parcelaParaClima.longitud}`
             );
             
             if (response.ok) {
@@ -427,7 +428,7 @@ const ParcelasManager = () => {
     setLoadingClima(true);
     try {
       const response = await fetch(
-        `http://localhost:8080/api/v1/alertas/openweather/clima?latitud=${formData.latitud}&longitud=${formData.longitud}`
+        `${config.API_BASE_URL}/alertas/openweather/clima?latitud=${formData.latitud}&longitud=${formData.longitud}`
       );
       
       if (!response.ok) {
@@ -516,7 +517,7 @@ const ParcelasManager = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/v1/alertas/openweather/clima?latitud=${parcela.latitud}&longitud=${parcela.longitud}`
+        `${config.API_BASE_URL}/alertas/openweather/clima?latitud=${parcela.latitud}&longitud=${parcela.longitud}`
       );
       
       if (!response.ok) {

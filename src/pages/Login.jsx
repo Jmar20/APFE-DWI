@@ -233,22 +233,6 @@ const Login = () => {
             </Button>
           </Box>
 
-          {/* Enlaces adicionales */}
-          <Box sx={{ mt: 4 }}>
-            <MuiLink
-              href="#"
-              sx={{
-                color: theme.palette.primary.main,
-                textDecoration: "none",
-                "&:hover": {
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              ¿Olvidaste tu contraseña?
-            </MuiLink>
-          </Box>
-
           <Divider sx={{ my: 3 }} />
 
           {/* Registro */}

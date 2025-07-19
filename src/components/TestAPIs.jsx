@@ -13,6 +13,7 @@ import {
   Tab
 } from '@mui/material';
 import { authService, cultivoService, alertaService, planificacionService } from '../services';
+import { config } from '../config';
 
 const TestAPIs = () => {
   const [loading, setLoading] = useState(false);
@@ -322,7 +323,7 @@ const TestAPIs = () => {
             📋 Información
           </Typography>
           <Typography variant="body2" paragraph>
-            <strong>Backend URL:</strong> http://localhost:8080/api/v1
+            <strong>Backend URL:</strong> {config.API_BASE_URL}
           </Typography>
           <Typography variant="body2" paragraph>
             <strong>Usuario de prueba:</strong> admin@example.com / admin123
